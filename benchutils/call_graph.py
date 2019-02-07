@@ -27,7 +27,7 @@ def make_callgraph(name: str, id: str, dry_run=NO_CALL_GRAPHS) -> 'PyCallGraph':
     config.trace_filter = GlobbingFilter(exclude=[
         'pycallgraph.*',
         'tornado*',
-        '*statstream*'
+        '*SynchronizedStatStreamStruct*'
     ])
     output = GraphvizOutput(output_file='call_graphs/{}_{}.png'.format(name, id))
     return PyCallGraph(output=output, config=config)
