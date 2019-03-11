@@ -42,6 +42,6 @@ if __name__ == '__main__':
 
     parser = add_bench_subparser(parser)
 
-    args = parser.parse_args('--checkpoint --seed 0 bench --repeat 9 --number 6 --report test.csv'.split(' '))
+    args = parser.parse_args('--checkpoint --seed 0 --cuda bench --repeat 9 --number 6 --report test.csv'.split(' '))
 
     print(args)
