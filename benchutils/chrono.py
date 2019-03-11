@@ -17,62 +17,75 @@ def chrono(func: Callable):
     return chrono_decorator
 
 
+class _ChronoContext:
+    """
+        sync is a function that can be set to make the timer wait before ending.
+        This is useful when timing async calls like cuda calls
+    """
+    def __init__(self, stream: StatStream, sync: Callable):
+        self.stream = stream
+        self.start = 0
+        self.sync = sync
+
+    def __enter__(self):
+        # Sync before starting timer to make sure previous work is not timed as well
+        self.sync()
+        self.start = time.time()
+
+    def __exit__(self, exception_type, exc_val, traceback):
+        # Sync before ending timer to make sure all the work is accounted for
+        self.sync()
+        self.end = time.time()
+
+        if exception_type is None:
+            self.stream.update(self.end - self.start)
+
+
 class MultiStageChrono:
-    def __init__(self, stages: List[str], drop=10):
-        self.names = stages
-        self.stages = [StatStream(drop) for _ in stages]
+    def __init__(self, skip_obs=10, sync=None):
+        self.chronos = {}
+        self.skip_obs = skip_obs
+        self.sync = sync
+        if sync is None:
+            self.sync = lambda: None
 
-        self.current_stage = 0
-        self.start_time = 0
-        self.end_time = 0
-        self.total_s = 0
-        self.total = StatStream(drop)
+    def time(self, name, skip_obs=None):
+        val = self.chronos.get(name)
 
-    def start(self, name=None):
-        if self.start_time == 0:
-            if name is not None:
-                assert self.names[self.current_stage] == name
+        if val is None:
+            val = StatStream(self.skip_obs)
+            if skip_obs is not None:
+                val = StatStream(skip_obs)
+            self.chronos[name] = val
 
-            self.start_time = time.time()
-            self.total_s = self.start_time
-        else:
-            self.end_time = time.time()
-            self.stages[self.current_stage] += (self.end_time - self.start_time)
-            self.start_time = self.end_time
-            self.current_stage += 1
-
-            if name is not None:
-                assert self.names[self.current_stage] == name
-
-    def end(self):
-        self.end_time = time.time()
-        self.stages[self.current_stage] += (self.end_time - self.start_time)
-        self.total += self.end_time - self.total_s
-        self.current_stage = 0
-        self.start_time = 0
+        return _ChronoContext(val, self.sync)
 
     def make_table(self, common: List = None, transform=None):
         common = common or []
         table = []
 
-        for i, stream in enumerate(self.stages):
-            table.append([self.names[i]] + stream.to_array(transform) + common)
+        for i, (name, stream) in enumerate(self.chronos.items()):
+            table.append([name] + stream.to_array(transform) + common)
 
-        table.append(['Total'] + self.total.to_array(transform) + common)
         return table
 
-    def report(self, speed=False, size=1):
+    def report(self, speed=False, size=1, filename=None):
         header = ['Stage', 'Average', 'Deviation', 'Min', 'Max', 'count']
         table = self.make_table(None, lambda x: size / x) if speed else self.make_table()
-        print_table(header, table)
+        print_table(header, table, filename)
 
 
 if __name__ == '__main__':
 
-    a = MultiStageChrono(['start', 'end'])
+    chrono = MultiStageChrono(2)
 
-    a.start('start')
+    for i in range(0, 10):
 
-    a.start('end')
+        with chrono.time('forward_back'):
+            with chrono.time('forward'):
+                time.sleep(1)
 
-    a.end()
+            with chrono.time('backward', skip_obs=3):
+                time.sleep(1)
+
+    chrono.report()
