@@ -1,4 +1,6 @@
 import git
+import hashlib
+
 from typing import Tuple
 
 
@@ -10,3 +12,27 @@ def get_git_version(module) -> Tuple[str, str]:
     commit_date = repo.head.object.committed_datetime
 
     return commit_hash, commit_date
+
+
+BUF_SIZE = 65536
+
+
+def get_file_version(file_name):
+    """ hash the file using sha256, used in combination with get_git_version to version non committed modifications """
+    sha256 = hashlib.sha256()
+
+    with open(file_name, 'rb') as f:
+        while True:
+            data = f.read(BUF_SIZE)
+
+            if not data:
+                break
+
+            sha256.update(data)
+
+    return sha256.hexdigest()
+
+
+if __name__ == '__main__':
+    print(get_file_version(__file__))
+
