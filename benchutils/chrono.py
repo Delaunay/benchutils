@@ -3,7 +3,7 @@ import time
 from benchutils.statstream import StatStream
 from benchutils.report import print_table
 
-from typing import List
+from typing import List, Dict
 from typing import Callable
 
 
@@ -15,6 +15,17 @@ def chrono(func: Callable):
         print('{:>30} ran in {:10.4f} s'.format(func.__name__, t))
         return value
     return chrono_decorator
+
+
+class _DummyContext:
+    def __init__(self, **args):
+        pass
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
 
 
 class _ChronoContext:
@@ -42,14 +53,22 @@ class _ChronoContext:
 
 
 class MultiStageChrono:
-    def __init__(self, skip_obs=10, sync=None):
+    def __init__(self, skip_obs=10, sync=None, disabled=False, name=None):
         self.chronos = {}
         self.skip_obs = skip_obs
         self.sync = sync
+        self.name = name
+        self.disabled = disabled
         if sync is None:
             self.sync = lambda: None
 
     def time(self, name, skip_obs=None):
+        if self.disabled:
+            return _DummyContext()
+
+        if self.name is not None:
+            name = '{}.{}'.format(self.name, name)
+
         val = self.chronos.get(name)
 
         if val is None:
@@ -69,15 +88,28 @@ class MultiStageChrono:
 
         return table
 
-    def report(self, speed=False, size=1, filename=None):
+    def report(self, speed=False, size=1, file_name=None, common: Dict[str, str] = None):
+        if self.disabled:
+            return
+
+        common = common or {}
+
+        # split map in two
+        items = list(common.items())
+
+        common_header = list(map(lambda item: item[0], items))
+        common = list(map(lambda item: item[1], items))
+
         header = ['Stage', 'Average', 'Deviation', 'Min', 'Max', 'count']
-        table = self.make_table(None, lambda x: size / x) if speed else self.make_table()
-        print_table(header, table, filename)
+        header.extend(common_header)
+
+        table = self.make_table(common, lambda x: size / x) if speed else self.make_table(common)
+        print_table(header, table, file_name)
 
 
 if __name__ == '__main__':
 
-    chrono = MultiStageChrono(2)
+    chrono = MultiStageChrono(2, disabled=False)
 
     for i in range(0, 10):
 

@@ -9,12 +9,16 @@ def add_bench_args(parser):
     return parser
 
 
-def make_bench_args_parser(parser=None):
+def make_bench_args_parser(parser=None, subparser=False):
     """ create a an argument parser for the bench arguments"""
     if parser is None:
         parser = argparse.ArgumentParser('Bench util argument parser')
 
-    add_bench_args(parser)
+    if parser is not None and subparser:
+        add_bench_subparser(parser)
+    else:
+        add_bench_args(parser)
+
     return parser
 
 
@@ -25,6 +29,18 @@ def add_bench_subparser(parser):
     p = p.add_parser('bench')
     add_bench_args(p)
     return parser
+
+
+def get_arguments(parser=None, subparser=False, show=False):
+    parser = make_bench_args_parser(parser, subparser)
+    args = parser.parse_args()
+
+    if show:
+        print('-' * 80)
+        for key, val in args.__dict__.items():
+            print('{:>30}: {}'.format(key, val))
+        print('-' * 80)
+    return args
 
 
 if __name__ == '__main__':

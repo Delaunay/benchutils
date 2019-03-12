@@ -17,7 +17,7 @@ def get_git_version(module) -> Tuple[str, str]:
 BUF_SIZE = 65536
 
 
-def get_file_version(file_name):
+def get_file_version(file_name: str) -> str:
     """ hash the file using sha256, used in combination with get_git_version to version non committed modifications """
     sha256 = hashlib.sha256()
 
@@ -34,5 +34,9 @@ def get_file_version(file_name):
 
 
 if __name__ == '__main__':
-    print(get_file_version(__file__))
+    print(type(get_file_version(__file__)))
+
+    import benchutils
+
+    print(get_git_version(benchutils))
 

@@ -8,7 +8,7 @@
 * `report` generate a simple CSV/markdown table from python lists 
 
 
-# Example
+# Examples
 
 ## StatStream
 
