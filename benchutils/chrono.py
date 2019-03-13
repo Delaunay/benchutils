@@ -42,6 +42,7 @@ class _ChronoContext:
         # Sync before starting timer to make sure previous work is not timed as well
         self.sync()
         self.start = time.time()
+        return self.stream
 
     def __exit__(self, exception_type, exc_val, traceback):
         # Sync before ending timer to make sure all the work is accounted for
@@ -121,7 +122,11 @@ if __name__ == '__main__':
             with chrono.time('forward'):
                 time.sleep(1)
 
-            with chrono.time('backward', skip_obs=3):
+            with chrono.time('backward', skip_obs=3) as t:
                 time.sleep(1)
+
+            print(t)
+
+
 
     chrono.report()

@@ -36,6 +36,13 @@ def get_arguments(parser=None, subparser=False, show=False):
     parser = make_bench_args_parser(parser, subparser)
     args = parser.parse_args()
 
+    try:
+        import torch
+        if not torch.cuda.is_available():
+            args.cuda = False
+    except:
+        pass
+
     if show:
         print('-' * 80)
         for key, val in args.__dict__.items():
