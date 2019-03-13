@@ -51,6 +51,10 @@ class _ChronoContext:
         if exception_type is None:
             self.stream.update(self.end - self.start)
 
+    @property
+    def count(self):
+        return self.stream.current_count
+
 
 class MultiStageChrono:
     def __init__(self, skip_obs=10, sync=None, disabled=False, name=None):
@@ -88,7 +92,7 @@ class MultiStageChrono:
 
         return table
 
-    def report(self, speed=False, size=1, file_name=None, common: Dict[str, str] = None):
+    def report(self, speed=False, size=1, file_name=None, common: Dict[str, str] = None, skip_header=False):
         if self.disabled:
             return
 
@@ -104,12 +108,12 @@ class MultiStageChrono:
         header.extend(common_header)
 
         table = self.make_table(common, lambda x: size / x) if speed else self.make_table(common)
-        print_table(header, table, file_name)
+        print_table(header, table, file_name, skip_header)
 
 
 if __name__ == '__main__':
 
-    chrono = MultiStageChrono(2, disabled=False)
+    chrono = MultiStageChrono(0, disabled=False)
 
     for i in range(0, 10):
 

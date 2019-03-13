@@ -128,12 +128,16 @@ class PrintTable:
                 end_row(row_id)
 
 
-def print_table(cols, data, filename=None):
+def print_table(cols, data, filename=None, skip_header=True):
     report = PrintTable(cols, data)
     report.print()
 
     if filename is not None:
-        header = not os.path.exists(filename)
+        if skip_header:
+            header = not os.path.exists(filename)
+        else:
+            header = True
+
         append_file = open(filename, 'a')
 
         def new_print(self='', *args, sep=' ', end='\n', file=None):
@@ -145,10 +149,10 @@ def print_table(cols, data, filename=None):
         append_file.close()
 
 
-def print_stat_streams(names: List[str], stats: List[StatStream], additional_names=[], additional_cols=[], file_name: str=None):
+def print_stat_streams(names: List[str], stats: List[StatStream], additional_names=[], additional_cols=[], file_name: str=None, skip_header=True):
     cols = ['Name', 'Average', 'SD', 'Min', 'Max', 'Total', 'Count'] + additional_names
     data = [[name, stat.avg, stat.sd, stat.min, stat.max, stat.total, stat.count] + additional_cols for name, stat in zip(names, stats)]
-    print_table(cols, data, file_name)
+    print_table(cols, data, file_name, skip_header)
 
 
 if __name__ == '__main__':

@@ -6,6 +6,7 @@ def add_bench_args(parser):
     parser.add_argument('--repeat', type=int, default=100, help='number of observation timed')
     parser.add_argument('--number', type=int, default=10, help='number of time a task is done in between timer')
     parser.add_argument('--report', type=str, default=None, help='file to store the benchmark result in')
+    # parser.add_argument('--sync', action='store_true', default=True, help='sync cuda streams for correct timings')
     return parser
 
 
