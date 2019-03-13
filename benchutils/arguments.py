@@ -1,4 +1,5 @@
 import argparse
+import os
 
 
 def add_bench_args(parser):
@@ -42,6 +43,9 @@ def get_arguments(parser=None, subparser=False, show=False):
             args.cuda = False
     except:
         pass
+
+    if args.report is None:
+        args.report = os.environ.get('REPORT_PATH')
 
     if show:
         print('-' * 80)
