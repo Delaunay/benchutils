@@ -1,7 +1,7 @@
 import math
+import json
+
 from multiprocessing import Value
-
-
 from multiprocessing.sharedctypes import Value
 from ctypes import Structure, c_double, c_int
 
@@ -101,11 +101,6 @@ class StatStream(object):
         self.struct.min = min(self.min, val)
         self.struct.max = max(self.max, val)
 
-    def to_array(self, transform=None):
-        if transform is not None:
-            return [transform(self.avg), 'NA', transform(self.min), transform(self.max), self.count]
-        return [self.avg, self.sd, self.min, self.max, self.count]
-
     @property
     def val(self) -> float:
         return self.current_obs + self.first_obs
@@ -127,3 +122,21 @@ class StatStream(object):
     @property
     def sd(self) -> float:
         return math.sqrt(self.var)
+
+    def to_array(self, transform=None):
+        if transform is not None:
+            return [transform(self.avg), 'NA', transform(self.min), transform(self.max), self.count]
+        return [self.avg, self.sd, self.min, self.max, self.count]
+
+    def to_dict(self):
+        data = {
+            'avg': self.avg,
+            'min': self.min,
+            'max': self.max,
+            'sd': self.sd,
+            'count': self.count,
+        }
+        return data
+
+    def to_json(self):
+        return json.dumps(self.to_dict())

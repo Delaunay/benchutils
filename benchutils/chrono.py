@@ -1,4 +1,5 @@
 import time
+import json
 
 from benchutils.statstream import StatStream
 from benchutils.report import print_table
@@ -111,6 +112,22 @@ class MultiStageChrono:
         table = self.make_table(common, lambda x: size / x) if speed else self.make_table(common)
         print_table(header, table, file_name, skip_header)
 
+    def to_dict(self, base=None):
+        items = base
+        if items is None:
+            items = {}
+
+        if self.name is not None:
+            items['name'] = self.name
+
+        for key, stream in self.chronos.items():
+            items[key] = stream.to_dict()
+
+        return items
+
+    def to_json(self, base=None, *args, **kwargs):
+        return json.dumps(self.to_dict(base), *args, **kwargs)
+
 
 if __name__ == '__main__':
 
@@ -127,6 +144,7 @@ if __name__ == '__main__':
 
             print(t)
 
-
-
     chrono.report()
+    print(chrono.to_json(base={'main': 1}, indent='   '))
+
+
