@@ -135,6 +135,7 @@ class StatStream(object):
             'max': self.max,
             'sd': self.sd,
             'count': self.count,
+            'unit': 's'
         }
         return data
 
