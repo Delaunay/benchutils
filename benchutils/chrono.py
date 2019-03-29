@@ -72,8 +72,8 @@ class MultiStageChrono:
         if self.disabled:
             return _DummyContext()
 
-        if self.name is not None:
-            name = '{}.{}'.format(self.name, name)
+        # if self.name is not None:
+        #    name = '{}.{}'.format(self.name, name)
 
         val = self.chronos.get(name)
 
