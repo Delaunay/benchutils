@@ -46,6 +46,7 @@ StatStream is thread safe and multiprocessing friendly (it will sync across proc
                 time.sleep(1)
 
     chrono.report()
+    chrono.report(format='json')
     
 Output
 
@@ -54,6 +55,32 @@ Output
           forward ,  1.0007 ,    0.0003 , 1.0001 , 1.0010 ,     8 
          backward ,  1.0010 ,    0.0000 , 1.0010 , 1.0011 ,     7 
 
+    {
+      "forward_back": {
+        "avg": 2.0022916555404664,
+        "min": 2.0014455318450928,
+        "max": 2.003028154373169,
+        "sd": 0.000445246188356245,
+        "count": 10,
+        "unit": "s"
+      },
+      "forward": {
+        "avg": 1.0009073734283447,
+        "min": 1.000166893005371,
+        "max": 1.0011417865753174,
+        "sd": 0.0003713474616615058,
+        "count": 10,
+        "unit": "s"
+      },
+      "backward": {
+        "avg": 1.0010595662253243,
+        "min": 1.0008213520050049,
+        "max": 1.0011804103851318,
+        "sd": 0.00010404040982473873,
+        "count": 7,
+        "unit": "s"
+      }
+    }
 
     
 # Versioning
