@@ -156,18 +156,18 @@ def get_div_fmt(val):
     return div, fmt
 
 
-def show_eta(i, n, timer):
+def show_eta(i, n, timer, end='\n'):
     eta, offset = estimated_time_to_arrival(i, n, timer)
     size = int(log10(n) + 1)
 
     div, fmt = get_div_fmt(eta)
 
-    eta = f'{eta / div:4.2f} {fmt}'
+    eta = f'{eta / div:6.2f} {fmt}'
 
     div, fmt = get_div_fmt(offset)
-    conf = f'{offset / sqrt(div):4.2f} {fmt}'
+    conf = f'{offset / sqrt(div):6.2f} {fmt}'
 
-    print(f'[{i:{size}d}/{n:{size}d}] {eta} +/- {conf}')
+    print(f'[{i:{size}d}/{n:{size}d}] {eta} +/- {conf}', end=end)
 
 
 if __name__ == '__main__':
