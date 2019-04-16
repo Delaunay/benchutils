@@ -1,4 +1,4 @@
-`import git
+import git
 import hashlib
 
 from typing import Tuple
