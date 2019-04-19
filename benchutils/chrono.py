@@ -51,8 +51,8 @@ class ChronoContext:
         self.parent.depth += 1
         self.sync()
 
-        if self.verbose:
-            print(f'{" " * self.depth * 2} [{self.depth:3d}] >  {self.name}')
+        #if self.verbose:
+        #    print(f'{" " * self.depth * 2} [{self.depth:3d}] >  {self.name}', end='')
 
         self.start = time.time()
         return self.stream
@@ -68,11 +68,11 @@ class ChronoContext:
 
         if self.verbose:
             print(
-                f'{" " * self.depth * 2} [{self.depth:3d}] <  {self.name}: (obs: {self.stream.val:8.4f} s, '
-                f'avg: {self.stream.avg:8.4f})',
-                end=self.newline
+                f'{self.newline}{" " * self.depth * 2} [{self.depth:3d}] <  {self.name:>30}: (obs: {self.stream.val:8.4f} s, '
+                f'avg: {self.stream.avg:8.4f}, '
+                f'cnt: {self.stream.count})',
+                end=''
             )
-
 
     @property
     def count(self):
@@ -166,6 +166,7 @@ def time_this(chrono, *cargs, **ckwargs):
 
         return wrapper
     return toplevel_decorator
+
 
 def estimated_time_to_arrival(i, n, timer):
     # return ETA and +/- offset
