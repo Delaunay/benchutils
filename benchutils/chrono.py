@@ -149,7 +149,19 @@ class MultiStageChrono:
         return json.dumps(self.to_dict(base), *args, **kwargs)
 
 
+def time_this(chrono, *cargs, **ckwargs):
+    def toplevel_decorator(fun):
+        def wrapper(*args, **kwargs):
+            with chrono.time(fun.__name__, *cargs, **ckwargs):
+                return fun(*args, **kwargs)
+
+        return wrapper
+    return toplevel_decorator
+
+
 if __name__ == '__main__':
+
+
 
     chrono = MultiStageChrono(0, disabled=False)
 
@@ -166,5 +178,11 @@ if __name__ == '__main__':
 
     chrono.report()
     print(chrono.to_json(base={'main': 1}, indent='   '))
+
+    @time_this(chrono, verbose=True)
+    def test():
+        time.sleep(1)
+
+    test()
 
 
