@@ -29,19 +29,29 @@ class _DummyContext:
         pass
 
 
-class _ChronoContext:
+class ChronoContext:
     """
         sync is a function that can be set to make the timer wait before ending.
         This is useful when timing async calls like cuda calls
     """
-    def __init__(self, stream: StatStream, sync: Callable):
+    def __init__(self, name, stream: StatStream, sync: Callable, parent, verbose=False, endline='\n'):
+        self.name = name
         self.stream = stream
         self.start = 0
         self.sync = sync
+        self.parent = parent
+        self.verbose = verbose
+        self.newline = endline
 
     def __enter__(self):
         # Sync before starting timer to make sure previous work is not timed as well
+        self.depth = self.parent.depth
+        self.parent.depth += 1
         self.sync()
+
+        if self.verbose:
+            print(f'{" " * self.depth * 2} [{self.depth:3d}] >  {self.name}')
+
         self.start = time.time()
         return self.stream
 
@@ -50,8 +60,17 @@ class _ChronoContext:
         self.sync()
         self.end = time.time()
 
+        self.parent.depth -= 1
         if exception_type is None:
             self.stream.update(self.end - self.start)
+
+        if self.verbose:
+            print(
+                f'{" " * self.depth * 2} [{self.depth:3d}] <  {self.name}: (obs: {self.stream.val:8.4f} s, '
+                f'avg: {self.stream.avg:8.4f})',
+                end=self.newline
+            )
+
 
     @property
     def count(self):
@@ -65,10 +84,11 @@ class MultiStageChrono:
         self.sync = sync
         self.name = name
         self.disabled = disabled
+        self.depth = 0
         if sync is None:
             self.sync = lambda: None
 
-    def time(self, name, skip_obs=None):
+    def time(self, name, *args, skip_obs=None, **kwargs):
         if self.disabled:
             return _DummyContext()
 
@@ -83,7 +103,7 @@ class MultiStageChrono:
                 val = StatStream(skip_obs)
             self.chronos[name] = val
 
-        return _ChronoContext(val, self.sync)
+        return ChronoContext(name, val, self.sync, self, *args, **kwargs)
 
     def make_table(self, common: List = None, transform=None):
         common = common or []
@@ -133,16 +153,16 @@ if __name__ == '__main__':
 
     chrono = MultiStageChrono(0, disabled=False)
 
-    for i in range(0, 10):
+    with chrono.time('all', verbose=True):
+        for i in range(0, 10):
 
-        with chrono.time('forward_back'):
-            with chrono.time('forward'):
-                time.sleep(1)
+            with chrono.time('forward_back', verbose=True):
+                with chrono.time('forward', verbose=True):
+                    time.sleep(1)
 
-            with chrono.time('backward', skip_obs=3) as t:
-                time.sleep(1)
+                with chrono.time('backward', skip_obs=3, verbose=True) as t:
+                    time.sleep(1)
 
-            print(t)
 
     chrono.report()
     print(chrono.to_json(base={'main': 1}, indent='   '))
