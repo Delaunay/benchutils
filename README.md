@@ -44,16 +44,57 @@ StatStream is thread safe and multiprocessing friendly (it will sync across proc
 
             with chrono.time('backward', skip_obs=3):
                 time.sleep(1)
+                
+        show_eta(i, 10, timer)
+        
 
     chrono.report()
+    chrono.report(format='json')
     
 Output
+
+    [ 0/10] 22.52 s +/- 0.00 s
+    [ 1/10] 18.01 s +/- 2.09 s
+    [ 2/10] 16.35 s +/- 1.84 s
+    [ 3/10] 13.51 s +/- 1.81 s
+    [ 4/10] 11.51 s +/- 1.62 s
+    [ 5/10]  9.01 s +/- 1.48 s
+    [ 6/10]  6.86 s +/- 1.27 s
+    [ 7/10]  4.50 s +/- 1.04 s
+    [ 8/10]  2.28 s +/- 0.73 s
+    [ 9/10]  0.00 s +/- 0.00 s
 
             Stage , Average , Deviation ,    Min ,    Max , count 
      forward_back ,  2.0019 ,    0.0003 , 2.0013 , 2.0022 ,     8 
           forward ,  1.0007 ,    0.0003 , 1.0001 , 1.0010 ,     8 
          backward ,  1.0010 ,    0.0000 , 1.0010 , 1.0011 ,     7 
 
+    {
+      "forward_back": {
+        "avg": 2.0022916555404664,
+        "min": 2.0014455318450928,
+        "max": 2.003028154373169,
+        "sd": 0.000445246188356245,
+        "count": 10,
+        "unit": "s"
+      },
+      "forward": {
+        "avg": 1.0009073734283447,
+        "min": 1.000166893005371,
+        "max": 1.0011417865753174,
+        "sd": 0.0003713474616615058,
+        "count": 10,
+        "unit": "s"
+      },
+      "backward": {
+        "avg": 1.0010595662253243,
+        "min": 1.0008213520050049,
+        "max": 1.0011804103851318,
+        "sd": 0.00010404040982473873,
+        "count": 7,
+        "unit": "s"
+      }
+    }
 
     
 # Versioning

@@ -4,6 +4,8 @@ import json
 from benchutils.statstream import StatStream
 from benchutils.report import print_table
 
+from math import sqrt
+from math import log10
 from typing import List, Dict
 from typing import Callable
 
@@ -114,7 +116,12 @@ class MultiStageChrono:
 
         return table
 
-    def report(self, speed=False, size=1, file_name=None, common: Dict[str, str] = None, skip_header=False):
+    def report(self, *args, format='csv', **kwargs):
+        if format == 'csv':
+            return self.report_csv(*args, **kwargs)
+        print(self.to_json(*args, **kwargs))
+
+    def report_csv(self, speed=False, size=1, file_name=None, common: Dict[str, str] = None, skip_header=False):
         if self.disabled:
             return
 
@@ -146,6 +153,8 @@ class MultiStageChrono:
         return items
 
     def to_json(self, base=None, *args, **kwargs):
+        if 'indent' not in kwargs:
+            kwargs['indent'] = '  '
         return json.dumps(self.to_dict(base), *args, **kwargs)
 
 
@@ -158,26 +167,66 @@ def time_this(chrono, *cargs, **ckwargs):
         return wrapper
     return toplevel_decorator
 
+def estimated_time_to_arrival(i, n, timer):
+    # return ETA and +/- offset
+    avg = timer.avg
+    if avg == 0:
+        avg = timer.val
+
+    eta = (n - i - 1) * avg
+    return eta, 2.95 * timer.sd * sqrt((n - i - 1))
+
+
+def get_div_fmt(val):
+    div, fmt = 60, 'min'
+    if val < div:
+        div = 1
+        fmt = 's'
+    return div, fmt
+
+
+def show_eta(i, n, timer, end='\n'):
+    eta, offset = estimated_time_to_arrival(i, n, timer)
+    size = int(log10(n) + 1)
+
+    div, fmt = get_div_fmt(eta)
+
+    eta = f'{eta / div:6.2f} {fmt}'
+
+    div, fmt = get_div_fmt(offset)
+    conf = f'{offset / sqrt(div):6.2f} {fmt}'
+
+    print(f'[{i:{size}d}/{n:{size}d}] {eta} +/- {conf}', end=end)
+
 
 if __name__ == '__main__':
-
-
 
     chrono = MultiStageChrono(0, disabled=False)
 
     with chrono.time('all', verbose=True):
         for i in range(0, 10):
 
-            with chrono.time('forward_back', verbose=True):
+            with chrono.time('forward_back', verbose=True) as timer:
                 with chrono.time('forward', verbose=True):
                     time.sleep(1)
 
-                with chrono.time('backward', skip_obs=3, verbose=True) as t:
+                    if i % 2 == 0:
+                        time.sleep(0.25)
+
+                with chrono.time('backward', verbose=True, skip_obs=3):
                     time.sleep(1)
 
+                    if i % 2 == 0:
+                        time.sleep(0.25)
 
+        show_eta(i, 10, timer)
+
+    print()
     chrono.report()
     print(chrono.to_json(base={'main': 1}, indent='   '))
+
+    print()
+    chrono.report(format='json')
 
     @time_this(chrono, verbose=True)
     def test():

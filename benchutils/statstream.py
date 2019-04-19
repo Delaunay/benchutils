@@ -32,17 +32,45 @@ class StatStream(object):
         observations. The idea is if x ~ N(mu, sigma)  x - x0 and the sum of x - x0 should be close(r) to 0 allowing
         for greater precision; without that trick `var` was getting negative on some iteration.
     """
+
     def __init__(self, drop_first_obs=10):
         self.struct = Value(
             StatStreamStruct,
-            0,                      # sum
-            0,                      # sum_sqr
-            0,                      # first_obs
-            float('+inf'),          # min
-            float('-inf'),          # max
-            0,                      # current_count
-            0,                      # current_obs
-            drop_first_obs)         # drop_obs
+            0,  # sum
+            0,  # sum_sqr
+            0,  # first_obs
+            float('+inf'),  # min
+            float('-inf'),  # max
+            0,  # current_count
+            0,  # current_obs
+            drop_first_obs)  # drop_obs
+
+    @classmethod
+    def from_dict(cls, data):
+        cls.struct.sum = data['sum']
+        cls.struct.sum_sqr = data['sum_sqr']
+        cls.struct.first_obs = data['first_obs']
+        cls.struct.min = data['min']
+        cls.struct.max = data['max']
+        cls.struct.current_count = data['current_count']
+        cls.struct.current_obs = data['current_obs']
+        cls.struct.drop_obs = data['drop_obs']
+
+        return cls
+
+    def state_dict(self):
+        data = dict()
+
+        data['sum'] = self.struct.sum
+        data['sum_sqr'] = self.struct.sum_sqr
+        data['first_obs'] = self.struct.first_obs
+        data['min'] = self.struct.min
+        data['max'] = self.struct.max
+        data['current_count'] = self.struct.current_count
+        data['current_obs'] = self.struct.current_obs
+        data['drop_obs'] = self.struct.drop_obs
+
+        return data
 
     @property
     def sum(self):
@@ -106,7 +134,7 @@ class StatStream(object):
         return self.current_obs + self.first_obs
 
     @property
-    def count(self)-> int:
+    def count(self) -> int:
         # is count is 0 then self.sum is 0 so everything should workout
         return max(self.current_count - self.drop_obs, 1)
 
