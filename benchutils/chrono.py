@@ -31,19 +31,29 @@ class _DummyContext:
         pass
 
 
-class _ChronoContext:
+class ChronoContext:
     """
         sync is a function that can be set to make the timer wait before ending.
         This is useful when timing async calls like cuda calls
     """
-    def __init__(self, stream: StatStream, sync: Callable):
+    def __init__(self, name, stream: StatStream, sync: Callable, parent, verbose=False, endline='\n'):
+        self.name = name
         self.stream = stream
         self.start = 0
         self.sync = sync
+        self.parent = parent
+        self.verbose = verbose
+        self.newline = endline
 
     def __enter__(self):
         # Sync before starting timer to make sure previous work is not timed as well
+        self.depth = self.parent.depth
+        self.parent.depth += 1
         self.sync()
+
+        #if self.verbose:
+        #    print(f'{" " * self.depth * 2} [{self.depth:3d}] >  {self.name}', end='')
+
         self.start = time.time()
         return self.stream
 
@@ -52,8 +62,17 @@ class _ChronoContext:
         self.sync()
         self.end = time.time()
 
+        self.parent.depth -= 1
         if exception_type is None:
             self.stream.update(self.end - self.start)
+
+        if self.verbose:
+            print(
+                f'{self.newline}{" " * self.depth * 2} [{self.depth:3d}] <  {self.name:>30}: (obs: {self.stream.val:8.4f} s, '
+                f'avg: {self.stream.avg:8.4f}, '
+                f'cnt: {self.stream.count})',
+                end=''
+            )
 
     @property
     def count(self):
@@ -67,10 +86,11 @@ class MultiStageChrono:
         self.sync = sync
         self.name = name
         self.disabled = disabled
+        self.depth = 0
         if sync is None:
             self.sync = lambda: None
 
-    def time(self, name, skip_obs=None):
+    def time(self, name, skip_obs=None, **kwargs):
         if self.disabled:
             return _DummyContext()
 
@@ -85,7 +105,11 @@ class MultiStageChrono:
                 val = StatStream(skip_obs)
             self.chronos[name] = val
 
-        return _ChronoContext(val, self.sync)
+        # inherit sync from parent
+        if kwargs.get('sync') is None:
+            kwargs['sync'] = self.sync
+
+        return ChronoContext(name, val, parent=self, **kwargs)
 
     def make_table(self, common: List = None, transform=None):
         common = common or []
@@ -138,6 +162,16 @@ class MultiStageChrono:
         return json.dumps(self.to_dict(base), *args, **kwargs)
 
 
+def time_this(chrono, *cargs, **ckwargs):
+    def toplevel_decorator(fun):
+        def wrapper(*args, **kwargs):
+            with chrono.time(fun.__name__, *cargs, **ckwargs):
+                return fun(*args, **kwargs)
+
+        return wrapper
+    return toplevel_decorator
+
+
 def estimated_time_to_arrival(i: int, n: int, timer: StatStream):
     # return ETA and +/- offset
     avg = timer.avg
@@ -180,26 +214,35 @@ if __name__ == '__main__':
 
     chrono = MultiStageChrono(0, disabled=False)
 
-    for i in range(0, 10):
+    with chrono.time('all', verbose=True):
+        for i in range(0, 10):
 
-        with chrono.time('forward_back') as timer:
-            with chrono.time('forward'):
-                time.sleep(1)
+            with chrono.time('forward_back', verbose=True) as timer:
+                with chrono.time('forward', verbose=True):
+                    time.sleep(1)
 
-                if i % 2 == 0:
-                    time.sleep(0.25)
+                    if i % 2 == 0:
+                        time.sleep(0.25)
 
-            with chrono.time('backward', skip_obs=3):
-                time.sleep(1)
+                with chrono.time('backward', verbose=True, skip_obs=3):
+                    time.sleep(1)
 
-                if i % 2 == 0:
-                    time.sleep(0.25)
+                    if i % 2 == 0:
+                        time.sleep(0.25)
 
         show_eta(i, 10, timer)
 
     print()
     chrono.report()
     print(chrono.to_json(base={'main': 1}, indent='   '))
+
     print()
     chrono.report(format='json')
+
+    @time_this(chrono, verbose=True)
+    def test():
+        time.sleep(1)
+
+    test()
+
 
