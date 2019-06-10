@@ -49,3 +49,21 @@ class RingBuffer:
             return None
 
         return self.array[(self.offset - 1) % self.capacity]
+
+    def __repr__(self):
+        return repr(self.to_list())
+
+    def __str__(self):
+        return str(self.to_list())
+
+    @classmethod
+    def from_list(cls, lst, size, dtype, default_val=0):
+        self = cls(size, dtype, default_val)
+        for item in lst:
+            self.append(item)
+        return self
+
+
+if __name__ == '__main__':
+
+    print(RingBuffer.from_list([1, 2, 3], 10, torch.float32))

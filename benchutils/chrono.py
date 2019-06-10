@@ -138,7 +138,7 @@ class MultiStageChrono:
         return json.dumps(self.to_dict(base), *args, **kwargs)
 
 
-def estimated_time_to_arrival(i, n, timer):
+def estimated_time_to_arrival(i: int, n: int, timer: StatStream):
     # return ETA and +/- offset
     avg = timer.avg
     if avg == 0:
@@ -148,7 +148,7 @@ def estimated_time_to_arrival(i, n, timer):
     return eta, 2.95 * timer.sd * sqrt((n - i - 1))
 
 
-def get_div_fmt(val):
+def get_div_fmt(val: float):
     div, fmt = 60, 'min'
     if val < div:
         div = 1
@@ -156,7 +156,7 @@ def get_div_fmt(val):
     return div, fmt
 
 
-def show_eta(i, n, timer, end='\n'):
+def show_eta(i: int, n: int, timer: StatStream, end='\n'):
     eta, offset = estimated_time_to_arrival(i, n, timer)
     size = int(log10(n) + 1)
 
@@ -167,7 +167,13 @@ def show_eta(i, n, timer, end='\n'):
     div, fmt = get_div_fmt(offset)
     conf = f'{offset / sqrt(div):6.2f} {fmt}'
 
-    print(f'[{i:{size}d}/{n:{size}d}] {eta} +/- {conf}', end=end)
+    total = ''
+    if timer.avg != 0:
+        t = timer.avg * (timer.count + timer.drop_obs)
+        div, fmt = get_div_fmt(t)
+        total = f' | Total {t / div:6.2f} {fmt}'
+
+    print(f'[{i:{size}d}/{n:{size}d}] Remaining {eta} +/- {conf}{total}', end=end)
 
 
 if __name__ == '__main__':
